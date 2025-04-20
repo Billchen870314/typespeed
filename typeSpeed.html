@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英文打字練習</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        textarea {
+            width: 98%;
+            min-height: 100px;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+            /* 確保文字換行顯示正常 */
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
+        #sourceTextDisplay {
+            background-color: #eee;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-size: 1.2em;
+            line-height: 1.8;
+            /* 確保文字換行顯示正常 */
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 50px; /* 至少給點高度 */
+            border: 1px solid #ddd; /* 加個邊框方便看到區域 */
+        }
+        #typingArea {
+            font-size: 1.2em;
+            line-height: 1.8; /* 與顯示區域一致 */
+            min-height: 80px; /* 確保有足夠空間打字 */
+        }
+        .char {
+            /* 基本字符樣式，方便觀察 */
+             /* border-bottom: 1px solid transparent;  可以取消註解來看到每個字符的邊界 */
+        }
+        .current {
+            background-color: #d3e9ff; /* 目前光標位置 */
+            border-radius: 2px;
+            outline: 1px solid #9acffa; /* 加強提示 */
+        }
+        .correct {
+            color: #28a745 !important; /* 使用 !important 確保覆蓋 */
+            background-color: transparent !important; /* 清除可能殘留的背景 */
+        }
+        .incorrect {
+            color: #dc3545 !important; /* 使用 !important 確保覆蓋 */
+            background-color: #f8d7da !重要; /* 錯誤背景 */
+            text-decoration: underline;
+            border-radius: 2px;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        #results span {
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin: 10px 5px 0 0;
+            transition: background-color 0.3s ease;
+        }
+        button:hover:not(:disabled) { /* 只有非禁用狀態hover才變色 */
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .button-container {
+             text-align: center;
+             margin-bottom: 20px;
+        }
+
+        /* 外層容器，使用 Flexbox */
+        .content-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px; /* 左右區域之間的間距 */
+        }
+
+        /* 左側區域 */
+        .left-section {
+            flex: 2; /* 左側區域占較大空間 */
+        }
+
+        /* 右側推薦文章視窗 */
+        #linksWindow {
+            margin-top: 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            max-width: 100%; /* Make it span the full width of the container */
+        }
+
+        #linksWindow h3 {
+            margin: 0 0 10px;
+            font-size: 1.1em;
+            text-align: center;
+            color: #333;
+        }
+
+        #linksWindow ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #linksWindow ul li {
+            margin-bottom: 8px;
+        }
+
+        #linksWindow ul li a {
+            text-decoration: none;
+            color: #007bff;
+            font-size: 0.9em;
+            transition: color 0.3s ease;
+        }
+
+        #linksWindow ul li a:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>英文打字練習</h1>
+
+    <div class="content-wrapper">
+        <div class="left-section">
+            <h2>1. 貼上你的英文文章</h2>
+            <textarea id="textInput" placeholder="在這裡貼上你想練習的英文文章..."></textarea>
+            <div class="button-container">
+                <button id="loadTextButton">載入文章</button>
+            </div>
+        </div>
+
+        <div id="linksWindow">
+            <h3>英文文章推薦</h3>
+            <ul>
+                <li><a href="https://www.bbc.com" target="_blank">BBC</a></li>
+                <li><a href="https://www.cnn.com" target="_blank">CNN</a></li>
+                <li><a href="https://www.nytimes.com" target="_blank">New York Times</a></li>
+                <li><a href="https://www.theguardian.com" target="_blank">The Guardian</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>2. 顯示區域</h2>
+    <div id="sourceTextDisplay">請先載入文章...</div>
+
+    <h2>3. 在下方開始打字</h2>
+    <textarea id="typingArea" placeholder="載入文章後，點擊這裡開始打字..." disabled></textarea>
+
+    <div id="results">
+        速度: <span id="wpm">0</span> WPM |
+        正確率: <span id="accuracy">0</span> % |
+        時間: <span id="timer">0</span> 秒
+    </div>
+
+    <div class="button-container">
+      <button id="resetButton" disabled>重新練習</button>
+    </div>
+
+</div>
+
+<script>
+    // --- DOM Element References ---
+    // 確保這些 ID 與 HTML 中的 ID 完全一致
+    const textInput = document.getElementById('textInput');
+    const loadTextButton = document.getElementById('loadTextButton');
+    const sourceTextDisplay = document.getElementById('sourceTextDisplay');
+    const typingArea = document.getElementById('typingArea');
+    const resetButton = document.getElementById('resetButton');
+    const wpmDisplay = document.getElementById('wpm');
+    const accuracyDisplay = document.getElementById('accuracy');
+    const timerDisplay = document.getElementById('timer');
+    const finishButton = document.getElementById('finishButton');
+
+    // --- State Variables ---
+    let sourceText = "";
+    let sourceChars = []; // Array to hold the span elements for each character
+    let typedCharsCount = 0;
+    let correctCharsCount = 0;
+    let incorrectCharsCount = 0;
+    let startTime = null;
+    let timerInterval = null;
+    let practiceStarted = false;
+    let currentIndex = 0; // Index of the character the user should type next
+
+    // --- Event Listeners ---
+    loadTextButton.addEventListener('click', loadText);
+    typingArea.addEventListener('input', handleTyping);
+    resetButton.addEventListener('click', resetPractice);
+    typingArea.addEventListener('paste', (e) => {
+        e.preventDefault();
+        alert("請勿直接貼上內容，請逐字輸入。");
+    });
+    finishButton.addEventListener('click', finishPractice);
+
+    // --- Core Functions ---
+
+    function loadText() {
+        console.log("載入文章按鈕被點擊"); // Debugging line
+        sourceText = textInput.value.trim();
+        console.log("取得的原始文字:", sourceText); // Debugging line
+
+        if (sourceText.length === 0) {
+            alert("請先貼上文章！");
+            console.log("沒有文字輸入，取消載入"); // Debugging line
+            return;
+        }
+
+        resetPractice(false); // Reset state but don't clear the input text field yet
+
+        sourceTextDisplay.innerHTML = ''; // Clear the display area
+        sourceChars = []; // Clear the character array
+
+        // Create spans for each character and append to display
+        try {
+            sourceText.split('').forEach((char, index) => {
+                const charSpan = document.createElement('span');
+                charSpan.className = 'char';
+                charSpan.innerText = char;
+                sourceTextDisplay.appendChild(charSpan);
+                sourceChars.push(charSpan);
+                // console.log(`已附加字符: ${char} 到 sourceTextDisplay`); // Debugging line (can be very verbose)
+            });
+            console.log("所有字符的 span 都已建立並附加"); // Debugging line
+        } catch (error) {
+            console.error("建立或附加 span 時發生錯誤:", error); // Error handling
+            alert("處理文字時發生錯誤，請檢查瀏覽器控制台獲取詳細資訊。");
+            return;
+        }
+
+
+        // Highlight the first character if text exists
+        if (sourceChars.length > 0) {
+            sourceChars[0].classList.add('current');
+            console.log("已標示第一個字符為 'current'"); // Debugging line
+        } else {
+            console.log("sourceChars 陣列是空的，無法標示第一個字符"); // Debugging line
+        }
+
+        typingArea.disabled = false; // Enable typing area
+        resetButton.disabled = false; // Enable reset button
+        finishButton.disabled = false; // Enable finish button
+        typingArea.placeholder = "點擊這裡開始打字...";
+        textInput.disabled = true; // Disable source text input after loading
+        loadTextButton.disabled = true; // Disable load button after loading
+        console.log("已更新按鈕和輸入框狀態"); // Debugging line
+    }
+
+    function handleTyping() {
+        // Start timer on first character typed
+        if (!practiceStarted && typingArea.value.length > 0) {
+            startPractice();
+        }
+        if (!practiceStarted) return; // Don't process if practice hasn't started
+
+        const typedText = typingArea.value;
+        const currentTypedLength = typedText.length;
+        typedCharsCount = currentTypedLength; // Update total typed characters
+
+        correctCharsCount = 0; // Recalculate on each input
+        incorrectCharsCount = 0; // Recalculate on each input
+
+        // Remove previous 'current' marker
+        if (currentIndex < sourceChars.length) {
+            sourceChars[currentIndex].classList.remove('current');
+        }
+
+        // Compare typed text with source text character by character
+        for (let i = 0; i < sourceChars.length; i++) {
+            const sourceCharSpan = sourceChars[i];
+            const sourceChar = sourceCharSpan.innerText;
+
+            // Reset styles first
+            sourceCharSpan.classList.remove('correct', 'incorrect');
+
+            if (i < currentTypedLength) {
+                // Character has been typed
+                const typedChar = typedText[i];
+                if (typedChar === sourceChar) {
+                    sourceCharSpan.classList.add('correct');
+                    correctCharsCount++; // Increment correct count
+                } else {
+                    sourceCharSpan.classList.add('incorrect');
+                    incorrectCharsCount++; // Increment incorrect count
+                }
+            }
+        }
+
+        // Update the 'current' marker to the next character to be typed
+        currentIndex = currentTypedLength;
+        if (currentIndex < sourceChars.length) {
+            sourceChars[currentIndex].classList.add('current');
+        } else {
+            // User has typed up to or beyond the source text length
+            // Check if finished
+            if (currentIndex === sourceText.length && incorrectCharsCount === 0) {
+                endPractice(); // Automatically stop the practice
+            }
+        }
+
+        updateStats(); // Update WPM and Accuracy display
+    }
+
+    function startPractice() {
+        if (practiceStarted) return;
+        console.log("練習開始"); // Debugging line
+        practiceStarted = true;
+        startTime = new Date().getTime();
+        typingArea.placeholder = ""; // Clear placeholder
+
+        // Start the timer interval
+        timerInterval = setInterval(() => {
+            if (!practiceStarted) return;
+            const currentTime = new Date().getTime();
+            const elapsedTime = Math.floor((currentTime - startTime) / 1000); // Seconds
+            timerDisplay.textContent = elapsedTime;
+            updateStats(); // Continuously update stats like WPM
+        }, 1000);
+    }
+
+    function endPractice() {
+        if (!practiceStarted) return;
+        console.log("練習結束"); // Debugging line
+        practiceStarted = false;
+        clearInterval(timerInterval);
+        timerInterval = null;
+        typingArea.disabled = true; // Disable typing area on completion
+        updateStats(); // Final stats update
+        // Use setTimeout to ensure final stats render before alert
+        setTimeout(() => {
+             alert(`練習完成！\n速度: ${wpmDisplay.textContent} WPM\n正確率: ${accuracyDisplay.textContent}%`);
+        }, 100);
+
+    }
+
+    function updateStats() {
+        if (!startTime) { // Don't calculate if timer hasn't started
+             wpmDisplay.textContent = 0;
+             accuracyDisplay.textContent = 0;
+             return;
+        }
+
+        const currentTime = new Date().getTime();
+        const elapsedTime = (currentTime - startTime) / 1000; // Seconds
+
+        // Prevent division by zero and calculate only after some time has passed
+        if (elapsedTime <= 0) {
+             wpmDisplay.textContent = 0;
+        } else {
+            const minutes = elapsedTime / 60;
+             // Calculate WPM based on total typed characters (standard approach)
+             // A "word" is typically considered 5 characters including spaces
+            const wpm = Math.round((typedCharsCount / 5) / minutes);
+            wpmDisplay.textContent = wpm > 0 ? wpm : 0;
+        }
+
+
+        // Calculate Accuracy
+        if (typedCharsCount === 0) {
+            accuracyDisplay.textContent = 0; // Avoid division by zero
+        } else {
+             // Accuracy based on correct characters out of total typed characters
+            const accuracy = Math.round((correctCharsCount / typedCharsCount) * 100);
+            accuracyDisplay.textContent = accuracy >= 0 ? accuracy : 0;
+        }
+
+    }
+
+    // Modified resetPractice to optionally keep the textInput value
+    function resetPractice(clearInput = true) {
+        console.log("執行 resetPractice, clearInput:", clearInput); // Debugging line
+        practiceStarted = false;
+        clearInterval(timerInterval);
+        timerInterval = null;
+        startTime = null;
+        currentIndex = 0;
+        typedCharsCount = 0;
+        correctCharsCount = 0;
+        incorrectCharsCount = 0;
+
+        typingArea.value = '';
+        typingArea.disabled = true; // Disable until text loaded
+        resetButton.disabled = true; // Disable until text loaded
+        textInput.disabled = false; // Re-enable text input
+        loadTextButton.disabled = false; // Re-enable load button
+
+        sourceTextDisplay.innerHTML = '請先載入文章...'; // Reset display message
+        sourceChars = [];
+        // sourceText = ""; // Don't clear sourceText here if it's needed for reload
+
+        timerDisplay.textContent = 0;
+        wpmDisplay.textContent = 0;
+        accuracyDisplay.textContent = 0;
+
+        if (clearInput) {
+            textInput.value = ''; // Clear the original text input area only if requested
+            sourceText = ""; // Clear the stored source text
+            console.log("已清空原文輸入框"); // Debugging line
+        }
+        textInput.focus(); // Focus back to the input area
+    }
+
+    function finishPractice() {
+        if (!practiceStarted) return; // Do nothing if practice hasn't started
+        console.log("完成按鈕被點擊"); // Debugging line
+        practiceStarted = false; // Stop the practice
+        clearInterval(timerInterval); // Stop the timer
+        timerInterval = null; // Clear the interval reference
+        typingArea.disabled = true; // Disable the typing area
+        finishButton.disabled = true; // Disable the finish button
+        updateStats(); // Final stats update
+
+        // Display a completion message
+        setTimeout(() => {
+            alert(`練習完成！\n速度: ${wpmDisplay.textContent} WPM\n正確率: ${accuracyDisplay.textContent}%`);
+        }, 100);
+    }
+
+    // --- Initial Setup ---
+     typingArea.disabled = true;
+     resetButton.disabled = true;
+     textInput.focus(); // Focus on the text input on page load
+     console.log("頁面初始化完成"); // Debugging line
+
+</script>
+
+</body>
+</html>
